@@ -33,6 +33,10 @@
             <li><span class="answer" id="answer_hours_200000"></span> (200000 hours)</li>
             <li><span class="answer" id="answer_hours_250000"></span> (250000 hours)</li>
             <li><span class="answer" id="answer_hours_300000"></span> (300000 hours)</li>
+            <li><span class="answer" id="answer_hours_350000"></span> (350000 hours)</li>
+            <li><span class="answer" id="answer_hours_400000"></span> (400000 hours)</li>
+            <li><span class="answer" id="answer_hours_450000"></span> (450000 hours)</li>
+            <li><span class="answer" id="answer_hours_500000"></span> (500000 hours)</li>
         </ul>
         <ul>
             <li><span class="answer" id="answer_days_5000"></span> (5000 days)</li>
@@ -63,7 +67,7 @@
             }
 
             // hours
-            for (i = 1; i < 7; i++) {
+            for (i = 1; i < 11; i++) {
                 val = 50000 * i;
                 bday = findBday(y, m, d, 'hours', val);
                 el = document.getElementById("answer_hours_" + val);
