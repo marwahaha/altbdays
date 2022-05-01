@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>altbdays</title>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@2.3.2/build/global/luxon.min.js"></script>
+</head>
+<style>
+    body {
+        margin: 20px;
+        background-color: oldlace;
+    }
+
+    input {
+        width: 120px;
+    }
+</style>
+
+<body>
+    <div>
+        <span>birthday: </span>
+        <input oninput="recalc()" id="input_year" type="number" placeholder="year">
+        <input oninput="recalc()" id="input_month" type="number" placeholder="month (1-12)">
+        <input oninput="recalc()" id="input_day" type="number" placeholder="day">
+    </div>
+    <div>
+        <p>Alternative birthdays:</p>
+        <ul>
+            <li><span class="answer" id="answer_hours_50000"></span> (50000 hours)</li>
+            <li><span class="answer" id="answer_hours_100000"></span> (100000 hours)</li>
+            <li><span class="answer" id="answer_hours_150000"></span> (150000 hours)</li>
+            <li><span class="answer" id="answer_hours_200000"></span> (200000 hours)</li>
+            <li><span class="answer" id="answer_hours_250000"></span> (250000 hours)</li>
+            <li><span class="answer" id="answer_hours_300000"></span> (300000 hours)</li>
+        </ul>
+        <ul>
+            <li><span class="answer" id="answer_days_5000"></span> (5000 days)</li>
+            <li><span class="answer" id="answer_days_10000"></span> (10000 days)</li>
+            <li><span class="answer" id="answer_days_15000"></span> (15000 days)</li>
+            <li><span class="answer" id="answer_days_20000"></span> (20000 days)</li>
+            <li><span class="answer" id="answer_days_25000"></span> (25000 days)</li>
+            <li><span class="answer" id="answer_days_30000"></span> (30000 days)</li>
+        </ul>
+        <ul>
+            <li><span class="answer" id="answer_months_100"></span> (100 months)</li>
+            <li><span class="answer" id="answer_months_200"></span> (200 months)</li>
+            <li><span class="answer" id="answer_months_300"></span> (300 months)</li>
+            <li><span class="answer" id="answer_months_400"></span> (400 months)</li>
+            <li><span class="answer" id="answer_months_500"></span> (500 months)</li>
+            <li><span class="answer" id="answer_months_600"></span> (600 months)</li>
+        </ul>
+    </div>
+    <script>
+        var YESTERDAY = luxon.DateTime.local().plus({ days: -1 }).toISODate();
+
+        function recalc() {
+            y = document.getElementById("input_year").valueAsNumber;
+            m = document.getElementById("input_month").valueAsNumber;
+            d = document.getElementById("input_day").valueAsNumber;
+            if (Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(d)) {
+                return;
+            }
+
+            // hours
+            for (i = 1; i < 7; i++) {
+                val = 50000 * i;
+                bday = findBday(y, m, d, 'hours', val);
+                el = document.getElementById("answer_hours_" + val);
+                el.innerText = bday;
+                if (bday < YESTERDAY) {
+                    el.parentElement.style.color = 'gray';
+                } else {
+                    el.parentElement.style.color = '';
+                }
+            }
+
+            // days
+            for (i = 1; i < 7; i++) {
+                val = 5000 * i;
+                bday = findBday(y, m, d, 'days', val);
+                el = document.getElementById("answer_days_" + val);
+                el.innerText = bday;
+                if (bday < YESTERDAY) {
+                    el.parentElement.style.color = 'gray';
+                } else {
+                    el.parentElement.style.color = '';
+                }
+            }
+
+            // months
+            for (i = 1; i < 7; i++) {
+                val = 100 * i;
+                bday = findBday(y, m, d, 'months', val);
+                el = document.getElementById("answer_months_" + val);
+                el.innerText = bday;
+                if (bday < YESTERDAY) {
+                    el.parentElement.style.color = 'gray';
+                } else {
+                    el.parentElement.style.color = '';
+                }
+            }
+        }
+        function findBday(y, m, d, unit, number) {
+            return luxon.DateTime.local(y, m, d).plus({ [unit]: number }).toISODate();
+        }
+    </script>
+</body>
+
+</html>
