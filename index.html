@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <title>altbdays</title>
-    <script src="https://cdn.jsdelivr.net/npm/luxon@2.3.2/build/global/luxon.min.js"></script>
+    <script src="luxon.min.js"></script>
 </head>
 <style>
     body {
@@ -26,37 +26,60 @@
     </div>
     <div>
         <p>Alternative birthdays:</p>
-        <ul>
-            <li><span class="answer" id="answer_hours_50000"></span> (50000 hours)</li>
-            <li><span class="answer" id="answer_hours_100000"></span> (100000 hours)</li>
-            <li><span class="answer" id="answer_hours_150000"></span> (150000 hours)</li>
-            <li><span class="answer" id="answer_hours_200000"></span> (200000 hours)</li>
-            <li><span class="answer" id="answer_hours_250000"></span> (250000 hours)</li>
-            <li><span class="answer" id="answer_hours_300000"></span> (300000 hours)</li>
-            <li><span class="answer" id="answer_hours_350000"></span> (350000 hours)</li>
-            <li><span class="answer" id="answer_hours_400000"></span> (400000 hours)</li>
-            <li><span class="answer" id="answer_hours_450000"></span> (450000 hours)</li>
-            <li><span class="answer" id="answer_hours_500000"></span> (500000 hours)</li>
+        <ul id="hours">
         </ul>
-        <ul>
-            <li><span class="answer" id="answer_days_5000"></span> (5000 days)</li>
-            <li><span class="answer" id="answer_days_10000"></span> (10000 days)</li>
-            <li><span class="answer" id="answer_days_15000"></span> (15000 days)</li>
-            <li><span class="answer" id="answer_days_20000"></span> (20000 days)</li>
-            <li><span class="answer" id="answer_days_25000"></span> (25000 days)</li>
-            <li><span class="answer" id="answer_days_30000"></span> (30000 days)</li>
+        <ul id="days">
+
         </ul>
-        <ul>
-            <li><span class="answer" id="answer_months_100"></span> (100 months)</li>
-            <li><span class="answer" id="answer_months_200"></span> (200 months)</li>
-            <li><span class="answer" id="answer_months_300"></span> (300 months)</li>
-            <li><span class="answer" id="answer_months_400"></span> (400 months)</li>
-            <li><span class="answer" id="answer_months_500"></span> (500 months)</li>
-            <li><span class="answer" id="answer_months_600"></span> (600 months)</li>
+        <ul id="months">
+
         </ul>
     </div>
     <script>
-        var YESTERDAY = luxon.DateTime.local().plus({ days: -1 }).toISODate();
+        var YESTERDAY = luxon.DateTime.local().plus({ days: -1 });
+        var HOURS_EL = document.getElementById("hours")
+        var DAYS_EL = document.getElementById("days")
+        var MONTHS_EL = document.getElementById("months")
+
+
+        var data = {
+            'hours': {
+                'ul': HOURS_EL,
+                'name': 'hours',
+                'multiplier': 10000,
+            },
+            'days': {
+                'ul': DAYS_EL,
+                'name': 'days',
+                'multiplier': 1000,
+            },
+            'months': {
+                'ul': MONTHS_EL,
+                'name': 'months',
+                'multiplier': 25,
+            }
+        }
+
+
+        function createElement(unit, number) {
+            span = document.createElement("span")
+            span.className = "answer"
+            span.id = "answer_" + unit + "_" + number;
+            li = document.createElement("li")
+            li.appendChild(span);
+            li.innerHTML += " (" + number + " " + unit + ")";
+            return li;
+        }
+
+        function clearElements() {
+            var objs = [HOURS_EL, DAYS_EL, MONTHS_EL];
+            for (var x = 0; x < objs.length; x++) {
+                for (var i = objs[x].children.length - 1; i >= 0; i--) {
+                    objs[x].removeChild(objs[x].children[0]);
+                }
+            }
+
+        }
 
         function recalc() {
             y = document.getElementById("input_year").valueAsNumber;
@@ -66,44 +89,28 @@
                 return;
             }
 
-            // hours
-            for (i = 1; i < 11; i++) {
-                val = 50000 * i;
-                bday = findBday(y, m, d, 'hours', val);
-                el = document.getElementById("answer_hours_" + val);
-                el.innerText = bday;
-                if (bday < YESTERDAY) {
-                    el.parentElement.style.color = 'gray';
-                } else {
-                    el.parentElement.style.color = '';
+            clearElements();
+
+            for (a = 0; a < Object.keys(data).length; a++) {
+                var curObj = data[Object.keys(data)[a]];
+
+                var diff = YESTERDAY.diff(luxon.DateTime.local(y, m, d), curObj['name']).toObject();
+                var diffValue = diff[Object.keys(diff)[0]];
+                start = Math.floor(diffValue / curObj['multiplier']);
+                for (i = start; i < start + 5; i++) {
+                    val = curObj['multiplier'] * i;
+                    bday = findBday(y, m, d, curObj['name'], val);
+                    curObj['ul'].appendChild(createElement(curObj['name'], val));
+                    el = document.getElementById("answer_" + curObj['name'] + "_" + val);
+                    el.innerText = bday;
+                    if (bday < YESTERDAY.toISODate()) {
+                        el.parentElement.style.color = 'gray';
+                    } else {
+                        el.parentElement.style.color = '';
+                    }
                 }
             }
 
-            // days
-            for (i = 1; i < 7; i++) {
-                val = 5000 * i;
-                bday = findBday(y, m, d, 'days', val);
-                el = document.getElementById("answer_days_" + val);
-                el.innerText = bday;
-                if (bday < YESTERDAY) {
-                    el.parentElement.style.color = 'gray';
-                } else {
-                    el.parentElement.style.color = '';
-                }
-            }
-
-            // months
-            for (i = 1; i < 7; i++) {
-                val = 100 * i;
-                bday = findBday(y, m, d, 'months', val);
-                el = document.getElementById("answer_months_" + val);
-                el.innerText = bday;
-                if (bday < YESTERDAY) {
-                    el.parentElement.style.color = 'gray';
-                } else {
-                    el.parentElement.style.color = '';
-                }
-            }
         }
         function findBday(y, m, d, unit, number) {
             return luxon.DateTime.local(y, m, d).plus({ [unit]: number }).toISODate();
