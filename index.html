@@ -26,6 +26,8 @@
     </div>
     <div>
         <p>Alternative birthdays:</p>
+        <ul id="seconds"></ul>
+        <ul id="minutes"></ul>
         <ul id="hours"></ul>
         <ul id="days"></ul>
         <ul id="months"></ul>
@@ -35,41 +37,73 @@
     </div>
     <script>
         var YESTERDAY = luxon.DateTime.local().plus({ days: -1 });
+        var SECONDS_EL = document.getElementById("seconds")
+        var MINUTES_EL = document.getElementById("minutes")
         var HOURS_EL = document.getElementById("hours")
         var DAYS_EL = document.getElementById("days")
         var MONTHS_EL = document.getElementById("months")
         var ICS_FILE = null;
 
         var data = {
+            'seconds': {
+                'ul': SECONDS_EL,
+                'name': 'seconds',
+                'multiplier': 1e8,
+                'humanize': {
+                    'prefix': 'million ',
+                    'divisor': 1e6,
+                }
+            },
+            'minutes': {
+                'ul': MINUTES_EL,
+                'name': 'minutes',
+                'multiplier': 1e6,
+                'humanize': {
+                    'prefix': 'million ',
+                    'divisor': 1e6,
+                }
+            },
             'hours': {
                 'ul': HOURS_EL,
                 'name': 'hours',
-                'multiplier': 10000,
+                'multiplier': 1e4,
+                'humanize': {
+                    'prefix': 'thousand ',
+                    'divisor': 1e3,
+                }
             },
             'days': {
                 'ul': DAYS_EL,
                 'name': 'days',
-                'multiplier': 1000,
+                'multiplier': 1e3,
+                'humanize': {
+                    'prefix': 'thousand ',
+                    'divisor': 1e3,
+                }
             },
             'months': {
                 'ul': MONTHS_EL,
                 'name': 'months',
-                'multiplier': 25,
+                'multiplier': 1e2,
+                'humanize': {
+                    'prefix': '',
+                    'divisor': 1,
+                }
             }
         }
 
-        function createElement(unit, number) {
+        function createElement(unit, number, prefix, divisor) {
             span = document.createElement("span")
             span.className = "answer"
             span.id = "answer_" + unit + "_" + number;
             li = document.createElement("li")
             li.appendChild(span);
-            li.innerHTML += " (" + number + " " + unit + ")";
+            li.innerHTML += " (" + Math.round(number/divisor) + " " + prefix + unit + ")";
             return li;
         }
 
         function clearElements() {
-            var objs = [HOURS_EL, DAYS_EL, MONTHS_EL];
+            var objs = [SECONDS_EL, MINUTES_EL, HOURS_EL, DAYS_EL, MONTHS_EL];
             for (var x = 0; x < objs.length; x++) {
                 for (var i = objs[x].children.length - 1; i >= 0; i--) {
                     objs[x].removeChild(objs[x].children[0]);
@@ -99,7 +133,7 @@
                 for (i = start; i < start + 5; i++) {
                     val = curObj['multiplier'] * i;
                     bday = findBday(y, m, d, curObj['name'], val);
-                    curObj['ul'].appendChild(createElement(curObj['name'], val));
+                    curObj['ul'].appendChild(createElement(curObj['name'], val, curObj['humanize']['prefix'], curObj['humanize']['divisor']));
                     el = document.getElementById("answer_" + curObj['name'] + "_" + val);
                     el.innerText = bday;
                     if (bday < YESTERDAY.toISODate()) {
@@ -108,11 +142,10 @@
                         el.parentElement.style.color = '';
                     }
                     icsHash = Math.random().toString().substring(2);
-                    icsString += buildIcsEventString(new Date(bday).toISOString(), val, curObj['name'], icsHash);
+                    icsString += buildIcsEventString(new Date(bday).toISOString(), val, curObj['name'],  curObj['humanize']['prefix'], curObj['humanize']['divisor'], icsHash);
                 }
             }
 
-            // TODO: verify it makes the right events
             icsString += ICS_SUFFIX;
             buildIcsFileFromString(icsString);
             document.getElementById("download").style.display = "";
@@ -139,9 +172,9 @@
         var ICS_SUFFIX =
             "END:VCALENDAR";
 
-        function buildIcsEventString(date, number, unit, icsHash) {
-            var summary = number + ' ' + unit;
-            var description = 'You are now ' + number + ' ' + unit + ' old!';
+        function buildIcsEventString(date, number, unit, prefix, divisor, icsHash) {
+            var summary = Math.round(number/divisor) + ' ' + prefix + unit;
+            var description = 'You are now ' + summary + ' old!';
             return "BEGIN:VEVENT\n" +
                 "UID:test-" + icsHash + "\n" +
                 "DTSTART;VALUE=DATE:" +
