@@ -26,21 +26,19 @@
     </div>
     <div>
         <p>Alternative birthdays:</p>
-        <ul id="hours">
-        </ul>
-        <ul id="days">
-
-        </ul>
-        <ul id="months">
-
-        </ul>
+        <ul id="hours"></ul>
+        <ul id="days"></ul>
+        <ul id="months"></ul>
+    </div>
+    <div>
+        <a class="download" style="display: none" id="download" download="birthdays.ics"><button>Download calendar events</button></a>
     </div>
     <script>
         var YESTERDAY = luxon.DateTime.local().plus({ days: -1 });
         var HOURS_EL = document.getElementById("hours")
         var DAYS_EL = document.getElementById("days")
         var MONTHS_EL = document.getElementById("months")
-
+        var ICS_FILE = null;
 
         var data = {
             'hours': {
@@ -59,7 +57,6 @@
                 'multiplier': 25,
             }
         }
-
 
         function createElement(unit, number) {
             span = document.createElement("span")
@@ -91,12 +88,14 @@
 
             clearElements();
 
+            var icsString = ICS_PREFIX;
+            var icsHash = null;
             for (a = 0; a < Object.keys(data).length; a++) {
                 var curObj = data[Object.keys(data)[a]];
-
                 var diff = YESTERDAY.diff(luxon.DateTime.local(y, m, d), curObj['name']).toObject();
                 var diffValue = diff[Object.keys(diff)[0]];
                 start = Math.floor(diffValue / curObj['multiplier']);
+
                 for (i = start; i < start + 5; i++) {
                     val = curObj['multiplier'] * i;
                     bday = findBday(y, m, d, curObj['name'], val);
@@ -108,12 +107,69 @@
                     } else {
                         el.parentElement.style.color = '';
                     }
+                    icsHash = Math.random().toString().substring(2);
+                    icsString += buildIcsEventString(new Date(bday).toISOString(), val, curObj['name'], icsHash);
                 }
             }
 
+            // TODO: verify it makes the right events
+            icsString += ICS_SUFFIX;
+            buildIcsFileFromString(icsString);
+            document.getElementById("download").style.display = "";
+            document.getElementById("download").href = ICS_FILE;
         }
         function findBday(y, m, d, unit, number) {
             return luxon.DateTime.local(y, m, d).plus({ [unit]: number }).toISODate();
+        }
+
+        function convertDate(date) {
+            output = date.split("T")[0];
+            output = output.split("-");
+            output = output.join("");
+            return output;
+        }
+
+        var ICS_PREFIX =
+            "BEGIN:VCALENDAR\n" +
+            "CALSCALE:GREGORIAN\n" +
+            "METHOD:PUBLISH\n" +
+            "PRODID:-//Test Cal//EN\n" +
+            "VERSION:2.0\n";
+
+        var ICS_SUFFIX =
+            "END:VCALENDAR";
+
+        function buildIcsEventString(date, number, unit, icsHash) {
+            var summary = number + ' ' + unit;
+            var description = 'You are now ' + number + ' ' + unit + ' old!';
+            return "BEGIN:VEVENT\n" +
+                "UID:test-" + icsHash + "\n" +
+                "DTSTART;VALUE=DATE:" +
+                convertDate(date) +
+                "\n" +
+                "DTEND;VALUE=DATE:" +
+                convertDate(date) +
+                "\n" +
+                "SUMMARY:" +
+                summary +
+                "\n" +
+                "DESCRIPTION:" +
+                description +
+                "\n" +
+                "END:VEVENT\n";
+        }
+
+        function buildIcsFileFromString(str) {
+            var obj = new File([str], { type: "text/plain" });
+
+            // If we are replacing a previously generated file we need to
+            // manually revoke the object URL to avoid memory leaks.
+            if (ICS_FILE !== null) {
+                window.URL.revokeObjectURL(ICS_FILE);
+            }
+
+            ICS_FILE = window.URL.createObjectURL(obj);
+            return ICS_FILE;
         }
     </script>
 </body>
