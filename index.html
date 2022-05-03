@@ -26,6 +26,7 @@
     </div>
     <div>
         <p>Alternative birthdays:</p>
+        <ul id="plancks"></ul>
         <ul id="seconds"></ul>
         <ul id="minutes"></ul>
         <ul id="hours"></ul>
@@ -36,15 +37,27 @@
         <a class="download" style="display: none" id="download" download="birthdays.ics"><button>Download calendar events</button></a>
     </div>
     <script>
-        var YESTERDAY = luxon.DateTime.local().plus({ days: -1 });
-        var SECONDS_EL = document.getElementById("seconds")
-        var MINUTES_EL = document.getElementById("minutes")
-        var HOURS_EL = document.getElementById("hours")
-        var DAYS_EL = document.getElementById("days")
-        var MONTHS_EL = document.getElementById("months")
         var ICS_FILE = null;
+        var YESTERDAY = luxon.DateTime.local().plus({ days: -1 });
+        var PLANCKS_EL = document.getElementById("plancks"),
+            SECONDS_EL = document.getElementById("seconds"),
+            MINUTES_EL = document.getElementById("minutes"),
+            HOURS_EL = document.getElementById("hours"),
+            DAYS_EL = document.getElementById("days"),
+            MONTHS_EL = document.getElementById("months");
+        var LI_ELS = [PLANCKS_EL, SECONDS_EL, MINUTES_EL, HOURS_EL, DAYS_EL, MONTHS_EL];
 
         var data = {
+            'plancks': {
+                'ul': PLANCKS_EL,
+                'name': 'seconds',
+                'multiplier': 5.391247*1e7,
+                'humanize': {
+                    'prefix': 'x 10^51 Planck times',
+                    'divisor': 5.391247*1e7,
+                },
+                'hideUnit': true,
+            },
             'seconds': {
                 'ul': SECONDS_EL,
                 'name': 'seconds',
@@ -92,21 +105,24 @@
             }
         }
 
-        function createElement(unit, number, prefix, divisor) {
+        function createElement(unit, number, prefix, divisor, hideUnit) {
             span = document.createElement("span")
             span.className = "answer"
             span.id = "answer_" + unit + "_" + number;
             li = document.createElement("li")
             li.appendChild(span);
-            li.innerHTML += " (" + Math.round(number/divisor) + " " + prefix + unit + ")";
+            li.innerHTML += " (" + generateText(number, unit, prefix, divisor, hideUnit) + ")";
             return li;
         }
 
+        function generateText(number, unit, prefix, divisor, hideUnit) {
+            return Math.round(number / divisor) + " " + prefix + (hideUnit ? "" : unit);
+        }
+
         function clearElements() {
-            var objs = [SECONDS_EL, MINUTES_EL, HOURS_EL, DAYS_EL, MONTHS_EL];
-            for (var x = 0; x < objs.length; x++) {
-                for (var i = objs[x].children.length - 1; i >= 0; i--) {
-                    objs[x].removeChild(objs[x].children[0]);
+            for (var x = 0; x < LI_ELS.length; x++) {
+                for (var i = LI_ELS[x].children.length - 1; i >= 0; i--) {
+                    LI_ELS[x].removeChild(LI_ELS[x].children[0]);
                 }
             }
 
@@ -133,7 +149,7 @@
                 for (i = start; i < start + 5; i++) {
                     val = curObj['multiplier'] * i;
                     bday = findBday(y, m, d, curObj['name'], val);
-                    curObj['ul'].appendChild(createElement(curObj['name'], val, curObj['humanize']['prefix'], curObj['humanize']['divisor']));
+                    curObj['ul'].appendChild(createElement(curObj['name'], val, curObj['humanize']['prefix'], curObj['humanize']['divisor'], curObj['hideUnit']));
                     el = document.getElementById("answer_" + curObj['name'] + "_" + val);
                     el.innerText = bday;
                     if (bday < YESTERDAY.toISODate()) {
@@ -142,7 +158,8 @@
                         el.parentElement.style.color = '';
                     }
                     icsHash = Math.random().toString().substring(2);
-                    icsString += buildIcsEventString(new Date(bday).toISOString(), val, curObj['name'],  curObj['humanize']['prefix'], curObj['humanize']['divisor'], icsHash);
+                    icsSummary = generateText(val, curObj['name'], curObj['humanize']['prefix'], curObj['humanize']['divisor'], curObj['hideUnit']);
+                    icsString += buildIcsEventString(new Date(bday).toISOString(), icsSummary, icsHash);
                 }
             }
 
@@ -172,9 +189,8 @@
         var ICS_SUFFIX =
             "END:VCALENDAR";
 
-        function buildIcsEventString(date, number, unit, prefix, divisor, icsHash) {
-            var summary = Math.round(number/divisor) + ' ' + prefix + unit;
-            var description = 'You are now ' + summary + ' old!';
+        function buildIcsEventString(date, icsSummary, icsHash) {
+            var description = 'You are now ' + icsSummary + ' old!';
             return "BEGIN:VEVENT\n" +
                 "UID:test-" + icsHash + "\n" +
                 "DTSTART;VALUE=DATE:" +
@@ -184,7 +200,7 @@
                 convertDate(date) +
                 "\n" +
                 "SUMMARY:" +
-                summary +
+                icsSummary +
                 "\n" +
                 "DESCRIPTION:" +
                 description +
